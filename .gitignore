@@ -1,0 +1,17 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+
+# Go
+*.exe
+*.out
+
+# OS
+.DS_Store
+Thumbs.dbfrontend-old/
+frontend-old/
