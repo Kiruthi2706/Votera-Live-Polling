@@ -1,12 +1,10 @@
 {
-{
   "services": {
     "frontend": {
       "root": "frontend/"
     },
     "backend": {
-      "root": "backend/",
-      "entrypoint": "main.go"
+      "root": "backend/"
     }
   },
   "rewrites": [

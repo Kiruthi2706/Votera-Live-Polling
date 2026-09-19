@@ -48,11 +48,7 @@ func main() {
 		)
 
 		if c.Request.Method == "OPTIONS" {
-
-			c.AbortWithStatus(
-				http.StatusNoContent,
-			)
-
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
@@ -133,6 +129,8 @@ func main() {
 	// SERVER
 	// =========================
 
+	// Vercel provides PORT automatically.
+	// For local development, use port 8080.
 	port := os.Getenv("PORT")
 
 	if port == "" {
@@ -144,13 +142,12 @@ func main() {
 	fmt.Println("=================================")
 
 	fmt.Println(
-		"Server running on http://localhost:" + port,
+		"Server running on port: " + port,
 	)
 
 	err := router.Run(":" + port)
 
 	if err != nil {
-
 		fmt.Println(
 			"Server failed to start:",
 			err,

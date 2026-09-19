@@ -1,4 +1,0 @@
-{
-  "buildCommand": "go build -o api",
-  "outputDirectory": "."
-}
