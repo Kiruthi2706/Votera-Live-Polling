@@ -1,6 +1,7 @@
-
 const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8080";
+    window.location.hostname === "localhost"
+        ? "http://localhost:8080"
+        : "https://votera-live-polling.onrender.com";
 
 export async function apiRequest(endpoint, options = {}) {
     const token = localStorage.getItem("token");
