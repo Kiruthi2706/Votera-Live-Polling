@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { apiRequest } from "../services/api";
 
@@ -17,8 +16,7 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
         setMessage("");
 
         try {
-            const { response, data } =
-                await apiRequest("/api/polls");
+            const { response, data } = await apiRequest("/api/polls");
 
             if (!response.ok) {
                 setMessage(
@@ -56,127 +54,99 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
         const sockets = [];
 
         polls.forEach((poll) => {
-            try {
-                // Use deployed backend URL in production.
-                // Falls back to localhost during local development.
-                const apiUrl =
-                    import.meta.env.VITE_API_URL ||
-                    "http://localhost:8080";
+            // Use Render backend in production
+            const apiUrl =
+                import.meta.env.VITE_API_URL ||
+                "http://localhost:8080";
 
-                const backendUrl = new URL(apiUrl);
+            const backendUrl = new URL(apiUrl);
 
-                // http  -> ws
-                // https -> wss
-                const protocol =
-                    backendUrl.protocol === "https:"
-                        ? "wss:"
-                        : "ws:";
+            const protocol =
+                backendUrl.protocol === "https:"
+                    ? "wss:"
+                    : "ws:";
 
-                const host = backendUrl.host;
+            const host = backendUrl.host;
 
-                const wsUrl =
-                    `${protocol}//${host}/api/polls/${poll.id}/ws`;
+            const wsUrl =
+                `${protocol}//${host}/api/polls/${poll.id}/ws`;
 
+            console.log("Connecting WebSocket:", wsUrl);
+
+            const socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
                 console.log(
-                    "Connecting dashboard WebSocket:",
-                    wsUrl
+                    "Dashboard WebSocket connected:",
+                    poll.id
                 );
+            };
 
-                const socket =
-                    new WebSocket(wsUrl);
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
 
-                socket.onopen = () => {
                     console.log(
-                        "Dashboard WebSocket connected:",
-                        poll.id
+                        "WebSocket message received:",
+                        data
                     );
-                };
 
-                socket.onmessage = (event) => {
-                    try {
-                        const data =
-                            JSON.parse(event.data);
+                    if (data.type === "vote_update") {
+                        setPolls((currentPolls) => {
+                            return currentPolls.map(
+                                (currentPoll) => {
+                                    if (
+                                        currentPoll.id !==
+                                        data.poll_id
+                                    ) {
+                                        return currentPoll;
+                                    }
 
-                        console.log(
-                            "WebSocket update:",
-                            data
-                        );
+                                    const updatedVotes = [
+                                        ...(currentPoll.votes || [])
+                                    ];
 
-                        if (
-                            data.type ===
-                            "vote_update"
-                        ) {
-                            setPolls(
-                                (currentPolls) => {
-                                    return currentPolls.map(
-                                        (currentPoll) => {
-                                            if (
-                                                currentPoll.id !==
-                                                data.poll_id
-                                            ) {
-                                                return currentPoll;
-                                            }
+                                    updatedVotes[data.option] =
+                                        Number(data.votes);
 
-                                            const updatedVotes =
-                                                [
-                                                    ...(currentPoll.votes ||
-                                                        [])
-                                                ];
-
-                                            updatedVotes[
-                                                data.option
-                                            ] = Number(
-                                                data.votes
-                                            );
-
-                                            return {
-                                                ...currentPoll,
-                                                votes:
-                                                    updatedVotes
-                                            };
-                                        }
-                                    );
+                                    return {
+                                        ...currentPoll,
+                                        votes: updatedVotes
+                                    };
                                 }
                             );
-                        }
-                    } catch (error) {
-                        console.error(
-                            "WebSocket message error:",
-                            error
-                        );
+                        });
                     }
-                };
-
-                socket.onerror = (error) => {
+                } catch (error) {
                     console.error(
-                        "Dashboard WebSocket error:",
+                        "WebSocket message error:",
                         error
                     );
-                };
+                }
+            };
 
-                socket.onclose = () => {
-                    console.log(
-                        "Dashboard WebSocket disconnected:",
-                        poll.id
-                    );
-                };
-
-                sockets.push(socket);
-            } catch (error) {
+            socket.onerror = (error) => {
                 console.error(
-                    "WebSocket connection setup error:",
+                    "Dashboard WebSocket error:",
                     error
                 );
-            }
+            };
+
+            socket.onclose = () => {
+                console.log(
+                    "Dashboard WebSocket disconnected:",
+                    poll.id
+                );
+            };
+
+            sockets.push(socket);
         });
 
         return () => {
             sockets.forEach((socket) => {
                 if (
-                    socket.readyState ===
-                    WebSocket.OPEN ||
-                    socket.readyState ===
-                    WebSocket.CONNECTING
+                    socket.readyState === WebSocket.OPEN ||
+                    socket.readyState === WebSocket.CONNECTING
                 ) {
                     socket.close();
                 }
@@ -214,13 +184,9 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
     // =====================================================
 
     function getPercentage(votes, total) {
-        if (!total) {
-            return 0;
-        }
+        if (!total) return 0;
 
-        return Math.round(
-            (votes / total) * 100
-        );
+        return Math.round((votes / total) * 100);
     }
 
     // =====================================================
@@ -266,7 +232,6 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
             ================================================= */}
 
             <header className="modern-dashboard-header">
-
                 <div className="dashboard-heading">
 
                     <div className="live-pill">
@@ -406,7 +371,9 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
 
                         <div>
 
-                            <h2>My Polls</h2>
+                            <h2>
+                                My Polls
+                            </h2>
 
                             <p>
                                 Polls created by your account.
@@ -419,7 +386,9 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
 
                     <div className="modern-search">
 
-                        <span>⌕</span>
+                        <span>
+                            ⌕
+                        </span>
 
                         <input
                             type="text"
@@ -529,9 +498,7 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                         (poll.votes || []).reduce(
                                             (sum, value) =>
                                                 sum +
-                                                Number(
-                                                    value || 0
-                                                ),
+                                                Number(value || 0),
                                             0
                                         );
 
@@ -552,15 +519,22 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                             <div className="modern-poll-top">
 
                                                 <span className="modern-live-badge">
+
                                                     <span></span>
+
                                                     LIVE
+
                                                 </span>
 
+
                                                 <span className="modern-vote-count">
+
                                                     ♟ {votes}{" "}
+
                                                     {votes === 1
                                                         ? "vote"
                                                         : "votes"}
+
                                                 </span>
 
                                             </div>
@@ -588,8 +562,7 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                                                 (
                                                                     poll.votes ||
                                                                     []
-                                                                )[index] ||
-                                                                0
+                                                                )[index] || 0
                                                             );
 
                                                         const percentage =
@@ -601,7 +574,7 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                                         const colorClass =
                                                             optionClasses[
                                                                 index %
-                                                                    optionClasses.length
+                                                                optionClasses.length
                                                             ];
 
                                                         return (
@@ -620,17 +593,11 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                                                     <span className="option-result">
 
                                                                         <strong>
-                                                                            {
-                                                                                optionVotes
-                                                                            }
+                                                                            {optionVotes}
                                                                         </strong>
 
                                                                         <span>
-                                                                            (
-                                                                            {
-                                                                                percentage
-                                                                            }
-                                                                            %)
+                                                                            ({percentage}%)
                                                                         </span>
 
                                                                     </span>
@@ -646,7 +613,8 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                                                             width:
                                                                                 `${percentage}%`
                                                                         }}
-                                                                    ></div>
+                                                                    >
+                                                                    </div>
 
                                                                 </div>
 
@@ -666,6 +634,7 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                                     ◷ Created just now
                                                 </span>
 
+
                                                 <div className="poll-footer-actions">
 
                                                     <button
@@ -678,6 +647,7 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
                                                     >
                                                         ↗ Share Poll
                                                     </button>
+
 
                                                     <button
                                                         className="view-poll-btn"
@@ -725,15 +695,18 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
 
                                 </div>
 
+
                                 <h3>
                                     Your voice matters!
                                 </h3>
+
 
                                 <p>
                                     Create a poll and see
                                     real-time results as
                                     people vote.
                                 </p>
+
 
                                 <button
                                     className="voice-create-btn"
@@ -754,4 +727,3 @@ function Dashboard({ onCreatePoll, onOpenPoll }) {
 }
 
 export default Dashboard;
-
